@@ -191,7 +191,7 @@ function ticketCard(t){
   return `<article class="card ${du?.cls || ""}" data-id="${id}">
     <div class="head"><h3>${esc(t.title.replace(/^#\d+\s*/, ""))}</h3>${d ? `<span class="pill ${esc(d.recommendation)}">${esc(REC[d.recommendation] || d.recommendation)}</span>` : ""}</div>
     <p class="meta">${link(t.url, "#" + id + " in Freshdesk")}, ${esc(t.who || "unknown requester")}, ${esc(STATUS[t.meta.status] || t.meta.status)}, ${esc(PRIORITY[t.meta.priority] || "")} priority${du ? `. <span class="due ${du.cls}">${esc(du.text)}</span>` : ""}</p>
-    ${d ? `<p class="update">${esc(d.status_update)}</p>
+    ${d ? `<p class="update">${esc(d.summary || d.status_update)}</p>
       ${stale ? `<p class="stale">There's newer activity than this draft. A fresh one comes with the next sync.</p>` : ""}
       <details><summary>Suggested reply</summary><textarea class="reply" aria-label="Reply to #${id}">${esc(d.suggested_reply)}</textarea>
         <div class="row"><button class="btn primary small" data-act="reply">Send reply</button></div></details>
@@ -209,6 +209,12 @@ function vTickets(){
   return order.filter(k => groups[k].length).map(k => `<h2>${names[k]} (${groups[k].length})</h2>${groups[k].map(ticketCard).join("")}`).join("");
 }
 function li(when, what, sub, src, u){ return `<li class="u${u||1}"><span class="when">${when}</span><span class="what">${what}${sub ? `<span class="sub">${sub}</span>` : ""}</span><span class="src">${esc(src)}</span></li>`; }
+function vSent(){
+  const list = kind("sent").sort((a,b) => new Date(b.at) - new Date(a.at));
+  if(!list.length) return `<p class="empty">Nothing you've sent in the last two weeks.</p>`;
+  return `<ul class="list">${list.map(t => { const d = S.drafts.get(Number(t.meta.ticket));
+    return li(fmtDay(new Date(t.at)), link(t.url, t.title), esc(d?.summary || ("To " + (t.who || "unknown") + ". Summary comes with the next sync.")), STATUS[t.meta.status] || "Freshdesk"); }).join("")}</ul>`;
+}
 function vEyes(){
   const items = kinds("brief-freshdesk","brief-slack","brief-asana");
   const watching = kind("watching");
@@ -216,7 +222,7 @@ function vEyes(){
   for(const i of items){ const k = i.meta.section_title || i.section; (bySec[k] = bySec[k] || []).push(i); }
   const SRC = { freshdesk:"Freshdesk", slack:"Slack", asana:"Asana" };
   let html = Object.entries(bySec).map(([title, list]) => `<h2>${esc(title)} (${list.length})</h2><ul class="list">${
-    list.sort((a,b) => b.urgency - a.urgency).map(i => li(i.at ? fmtDay(new Date(i.at)) : "", link(i.url, i.title), esc([i.why, i.who].filter(Boolean).join(" — ")), SRC[i.source] || i.source, i.urgency)).join("")}</ul>`).join("");
+    list.sort((a,b) => b.urgency - a.urgency).map(i => li(i.at ? fmtDay(new Date(i.at)) : "", link(i.url, i.title), esc(S.drafts.get(Number(i.meta.ticket))?.summary || [i.why, i.who].filter(Boolean).join(" — ")), SRC[i.source] || i.source, i.urgency)).join("")}</ul>`).join("");
   if(watching.length) html += `<h2>Tickets you're watching (${watching.length})</h2><ul class="list">${watching.map(t => li(fmtDay(new Date(t.at)), link(t.url, t.title), esc(`${STATUS[t.meta.status] || ""}, ${t.who}`), "Freshdesk")).join("")}</ul>`;
   return html || `<p class="empty">Nothing needs your eyes right now.</p>`;
 }
@@ -243,6 +249,7 @@ function vSpam(){
 }
 const TABS = [
   ["tickets", "My tickets", () => kind("ticket").length, vTickets],
+  ["sent", "Sent", () => kind("sent").length, vSent],
   ["eyes", "Eyes on", () => kinds("brief-freshdesk","brief-slack","brief-asana","watching").length, vEyes],
   ["calendar", "Calendar", () => kind("calendar").filter(e => dayKey(itemDate(e)) === dayKey(new Date())).length, vCalendar],
   ["spam", "Spam", () => kind("spam").length, vSpam],
