@@ -1,0 +1,293 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Moose Freshdesk Desk</title>
+<link rel="icon" href="icon.svg">
+<link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Atkinson+Hyperlegible:wght@400;700&display=swap" rel="stylesheet">
+<style>
+:root{
+  --pine:#0d6b62; --pine-deep:#0a4f49; --pine-soft:#d7ebe8;
+  --ground:#f2f5f3; --card:#ffffff; --ink:#14201e; --ink-2:#3f4f4c; --muted:#6c7b78; --line:#d5dfdc;
+  --red:#c2352b; --red-soft:#f8e0dd; --amber:#b87a0c; --amber-soft:#f6ebd2; --blue:#2463a0; --blue-soft:#dde9f5;
+  --radius:14px; --tap:48px;
+  font-family:"Atkinson Hyperlegible", system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+  color:var(--ink); background:var(--ground);
+  box-sizing:border-box; padding-top:env(safe-area-inset-top,0px); padding-bottom:env(safe-area-inset-bottom,0px);
+}
+@media (prefers-color-scheme: dark){ :root:not([data-theme="light"]){
+  --ground:#0f1716; --card:#172321; --ink:#e7efed; --ink-2:#b9c8c5; --muted:#8a9b98; --line:#26363a;
+  --pine:#3fa596; --pine-soft:#143632; --red-soft:#3a1916; --amber-soft:#33270f; --blue-soft:#13283d; } }
+:root[data-theme="dark"]{ --ground:#0f1716; --card:#172321; --ink:#e7efed; --ink-2:#b9c8c5; --muted:#8a9b98; --line:#26363a;
+  --pine:#3fa596; --pine-soft:#143632; --red-soft:#3a1916; --amber-soft:#33270f; --blue-soft:#13283d; }
+*,*::before,*::after{ box-sizing:inherit; }
+html{ scroll-padding-top:env(safe-area-inset-top,0px); }
+body{ margin:0; background:var(--ground); font-size:16px; line-height:1.5; }
+a{ color:var(--pine); }
+.wrap{ max-width:880px; margin:0 auto; padding:0 16px 48px; }
+.btn{ min-height:var(--tap); border:1px solid var(--line); background:var(--card); color:var(--ink); border-radius:10px; padding:0 16px; font:inherit; font-weight:700; cursor:pointer; }
+.btn.primary{ background:var(--pine); border-color:var(--pine); color:#fff; }
+.btn.small{ min-height:36px; padding:0 12px; font-size:14px; }
+.btn:disabled{ opacity:.55; cursor:wait; }
+:focus-visible{ outline:3px solid var(--amber); outline-offset:2px; }
+.muted{ color:var(--muted); }
+
+header.top{ padding:22px 0 10px; display:flex; flex-wrap:wrap; gap:12px; align-items:flex-end; justify-content:space-between; }
+header h1{ margin:0; font-size:clamp(28px,5.5vw,40px); line-height:1.05; }
+.pulse{ margin:6px 0 0; color:var(--ink-2); }
+.pulse b.red{ color:var(--red); }
+.sync{ display:flex; gap:8px; align-items:center; font-size:14px; color:var(--muted); flex-wrap:wrap; }
+.sync .err{ color:var(--red); }
+
+nav.tabs{ display:flex; gap:6px; overflow-x:auto; margin:8px 0 18px; padding-bottom:2px; }
+nav.tabs button{ min-height:40px; border:1px solid var(--line); background:var(--card); color:var(--ink-2); border-radius:999px; padding:0 14px; font:inherit; font-weight:700; white-space:nowrap; cursor:pointer; }
+nav.tabs button[aria-selected="true"]{ background:var(--pine); border-color:var(--pine); color:#fff; }
+nav.tabs .n{ margin-left:6px; font-weight:400; }
+
+h2{ font-size:19px; margin:24px 0 8px; }
+h2:first-child{ margin-top:0; }
+.card{ background:var(--card); border:1px solid var(--line); border-radius:var(--radius); padding:14px 16px; margin-bottom:10px; }
+.card.over{ border-left:5px solid var(--red); }
+.card.today{ border-left:5px solid var(--amber); }
+.head{ display:flex; gap:10px; justify-content:space-between; align-items:flex-start; }
+.head h3{ margin:0; font-size:17px; line-height:1.3; }
+.meta{ margin:4px 0 0; color:var(--muted); font-size:14px; }
+.due.over{ color:var(--red); font-weight:700; } .due.today{ color:var(--amber); font-weight:700; }
+.pill{ flex:none; font-size:13px; font-weight:700; border-radius:999px; padding:3px 10px; background:var(--pine-soft); color:var(--pine-deep); }
+.pill.reply{ background:var(--amber-soft); color:var(--amber); }
+.pill.escalate{ background:var(--red-soft); color:var(--red); }
+.pill.wait{ background:var(--blue-soft); color:var(--blue); }
+.update{ margin:10px 0 4px; }
+.stale{ font-size:14px; color:var(--amber); margin:0 0 4px; }
+details{ margin-top:6px; border-top:1px solid var(--line); padding-top:6px; }
+summary{ cursor:pointer; font-weight:700; color:var(--pine); min-height:36px; display:flex; align-items:center; }
+textarea{ width:100%; min-height:170px; margin-top:6px; padding:10px 12px; border:1px solid var(--line); border-radius:10px; background:var(--ground); color:var(--ink); font:inherit; resize:vertical; }
+.row{ display:flex; justify-content:flex-end; gap:8px; margin-top:8px; }
+
+.list{ list-style:none; margin:0; padding:0; background:var(--card); border:1px solid var(--line); border-radius:var(--radius); overflow:hidden; }
+.list li{ display:grid; grid-template-columns:92px 1fr auto; gap:12px; align-items:baseline; padding:12px 16px; border-top:1px solid var(--line); }
+.list li:first-child{ border-top:0; }
+.list .when{ color:var(--muted); font-size:14px; font-variant-numeric:tabular-nums; }
+.list .what{ min-width:0; overflow-wrap:anywhere; }
+.list .sub{ display:block; color:var(--muted); font-size:14px; }
+.list .src{ color:var(--muted); font-size:13px; white-space:nowrap; }
+.list li.u3 .what > a, .list li.u3 .what > span:first-child{ font-weight:700; }
+.empty{ color:var(--muted); padding:8px 0 16px; }
+
+.signin{ max-width:420px; margin:10vh auto; padding:0 16px; }
+.signin h1{ font-size:34px; margin:0 0 8px; }
+.field{ display:block; margin:12px 0; }
+.field span{ display:block; font-weight:700; margin-bottom:4px; }
+.field input{ width:100%; min-height:var(--tap); padding:0 12px; border:1px solid var(--line); border-radius:10px; background:var(--card); color:var(--ink); font:inherit; }
+#toast{ position:fixed; left:50%; bottom:calc(20px + env(safe-area-inset-bottom,0px)); transform:translateX(-50%); background:var(--ink); color:var(--ground); padding:10px 16px; border-radius:10px; opacity:0; pointer-events:none; transition:opacity .2s; }
+#toast.show{ opacity:1; }
+@media (max-width:620px){ .list li{ grid-template-columns:1fr; gap:2px; } .head{ flex-direction:column; } }
+@media (prefers-reduced-motion: reduce){ #toast{ transition:none; } }
+</style>
+</head>
+<body>
+<div id="app"></div>
+<div id="toast" role="status" aria-live="polite"></div>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.min.js"></script>
+<script src="config.js"></script>
+<script>
+const C = window.MM_CONFIG;
+const sb = supabase.createClient(C.url, C.anonKey, { auth:{ persistSession:true, detectSessionInUrl:true, flowType:"implicit" } });
+const $ = s => document.querySelector(s);
+const S = { user:null, items:[], drafts:new Map(), run:null, tab:"tickets" };
+const esc = s => String(s ?? "").replace(/[&<>"']/g, c => ({ "&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;" }[c]));
+const lsGet = k => { try { return localStorage.getItem(k); } catch { return null; } };
+const lsSet = (k,v) => { try { localStorage.setItem(k,v); } catch {} };
+const dayKey = d => d.toLocaleDateString("en-CA");
+const fmtDay = d => d.toLocaleDateString(undefined, { weekday:"short", month:"short", day:"numeric" });
+const fmtTime = d => d.toLocaleTimeString(undefined, { hour:"numeric", minute:"2-digit" });
+const link = (url, text) => url ? `<a href="${esc(url)}" target="_blank" rel="noopener">${esc(text)}</a>` : `<span>${esc(text)}</span>`;
+const kind = k => S.items.filter(i => i.kind === k);
+const kinds = (...ks) => S.items.filter(i => ks.includes(i.kind));
+const STATUS = { 2:"Open", 3:"Pending", 4:"Resolved", 5:"Closed", 6:"Waiting", 7:"Waiting" };
+const PRIORITY = { 1:"Low", 2:"Medium", 3:"High", 4:"Urgent" };
+const REC = { reply:"Needs a reply", escalate:"Escalate", close:"Ready to close", wait:"Waiting on them" };
+function toast(m){ const t = $("#toast"); t.textContent = m; t.classList.add("show"); clearTimeout(t._h); t._h = setTimeout(() => t.classList.remove("show"), 3500); }
+function itemDate(i){ if(i.meta?.date) return new Date(i.meta.date + "T00:00:00"); const v = i.due_at || i.at; return v ? new Date(v) : null; }
+function due(iso){
+  if(!iso) return null; const d = new Date(iso), now = new Date();
+  if(d < now) return { cls:"over", text:`Overdue since ${fmtDay(d)} ${fmtTime(d)}` };
+  if(dayKey(d) === dayKey(now)) return { cls:"today", text:`Due today ${fmtTime(d)}` };
+  return { cls:"", text:`Due ${fmtDay(d)} ${fmtTime(d)}` };
+}
+
+/* ---------- sign-in (same accounts as the maintenance site) ---------- */
+function signinView(msg){
+  $("#app").innerHTML = `<div class="signin"><h1>Freshdesk Desk</h1>
+    <p class="muted">Same sign-in as the maintenance site.</p>
+    <label class="field"><span>Email</span><input type="email" id="em" autocomplete="username" inputmode="email" value="${esc(lsGet("mm_email")||"")}"></label>
+    <label class="field"><span>Password</span><input type="password" id="pw" autocomplete="current-password"></label>
+    <button class="btn primary" id="go" style="width:100%">Sign in</button>
+    <p style="margin-top:16px"><button class="btn small" id="link">First time or forgot it? Email me a link</button></p>
+    <p id="msg" class="muted">${esc(msg||"")}</p></div>`;
+  $("#pw").onkeydown = e => { if(e.key === "Enter") $("#go").click(); };
+  $("#go").onclick = async () => {
+    const email = $("#em").value.trim(), password = $("#pw").value; if(!email || !password) return;
+    lsSet("mm_email", email); $("#go").disabled = true; $("#msg").textContent = "Signing in…";
+    const { error } = await sb.auth.signInWithPassword({ email, password });
+    $("#go").disabled = false;
+    $("#msg").textContent = error ? (/invalid/i.test(error.message) ? "Wrong email or password. First time? Use the email link, then set a password." : error.message) : "";
+    if(!error) boot();
+  };
+  $("#link").onclick = async () => {
+    const email = $("#em").value.trim(); if(!email) return $("#msg").textContent = "Type your email first.";
+    lsSet("mm_email", email); $("#msg").textContent = "Sending…";
+    const { error } = await sb.auth.signInWithOtp({ email, options:{ emailRedirectTo: location.origin + location.pathname + "?pw=1" } });
+    $("#msg").textContent = error ? "Couldn't send the link: " + error.message : "Link sent to " + email + ".";
+  };
+}
+function passwordView(){
+  $("#app").innerHTML = `<div class="signin"><h1>Set your password</h1>
+    <p class="muted">You'll sign in with ${esc(S.user.email)} and this password, here and on the maintenance site.</p>
+    <label class="field"><span>New password (10+ characters)</span><input type="password" id="p1" autocomplete="new-password"></label>
+    <label class="field"><span>Same again</span><input type="password" id="p2" autocomplete="new-password"></label>
+    <button class="btn primary" id="ps" style="width:100%">Save password</button></div>`;
+  $("#ps").onclick = async () => {
+    const a = $("#p1").value, b = $("#p2").value;
+    if(a.length < 10) return toast("Use at least 10 characters"); if(a !== b) return toast("Those don't match");
+    const { error } = await sb.auth.updateUser({ password:a });
+    if(error) return toast("Password not saved: " + error.message);
+    history.replaceState(null, "", location.pathname); toast("Password saved"); load();
+  };
+}
+
+/* ---------- data ---------- */
+async function load(){
+  const [items, drafts, run] = await Promise.all([
+    sb.from("fd_items").select("*").eq("active", true),
+    sb.from("fd_drafts").select("*"),
+    sb.from("fd_runs").select("at,ok,detail").order("at", { ascending:false }).limit(1),
+  ]);
+  if(items.error) return toast("Couldn't load: " + items.error.message);
+  S.items = items.data || [];
+  S.drafts = new Map((drafts.data || []).map(d => [Number(d.ticket_id), d]));
+  S.run = run.data?.[0] || null;
+  if(!S.items.length && !S.run){ $("#app").innerHTML = `<div class="signin"><h1>Nothing here yet</h1><p>Either the first sync hasn't run, or ${esc(S.user.email)} isn't an admin in allowed_users.</p><button class="btn" id="so">Sign out</button></div>`; $("#so").onclick = signOut; return; }
+  render();
+}
+async function act(action, ticket, body, btn){
+  const ask = { reply:`Send this reply on #${ticket}?`, close:`Send this email and close #${ticket}?`, not_spam:`Move #${ticket} out of spam?` }[action];
+  if(!confirm(ask)) return;
+  btn.disabled = true;
+  const { data, error } = await sb.functions.invoke("fd-action", { body:{ action, ticket_id:ticket, body } });
+  btn.disabled = false;
+  if(error || data?.error){ let m = data?.error || error.message; try { m = (await error.context.json()).error || m; } catch {} return toast("Didn't go through: " + m); }
+  toast({ reply:"Reply sent", close:"Sent and closed", not_spam:"Moved out of spam" }[action]);
+  load();
+}
+async function signOut(){ await sb.auth.signOut(); location.reload(); }
+
+/* ---------- views ---------- */
+function ticketCard(t){
+  const id = Number(t.meta.ticket), d = S.drafts.get(id), du = due(t.due_at);
+  const stale = d && (!d.ticket_updated_at || new Date(d.ticket_updated_at).getTime() !== new Date(t.meta.updated_at).getTime());
+  return `<article class="card ${du?.cls || ""}" data-id="${id}">
+    <div class="head"><h3>${esc(t.title.replace(/^#\d+\s*/, ""))}</h3>${d ? `<span class="pill ${esc(d.recommendation)}">${esc(REC[d.recommendation] || d.recommendation)}</span>` : ""}</div>
+    <p class="meta">${link(t.url, "#" + id + " in Freshdesk")}, ${esc(t.who || "unknown requester")}, ${esc(STATUS[t.meta.status] || t.meta.status)}, ${esc(PRIORITY[t.meta.priority] || "")} priority${du ? `. <span class="due ${du.cls}">${esc(du.text)}</span>` : ""}</p>
+    ${d ? `<p class="update">${esc(d.status_update)}</p>
+      ${stale ? `<p class="stale">There's newer activity than this draft. A fresh one comes with the next sync.</p>` : ""}
+      <details><summary>Suggested reply</summary><textarea class="reply" aria-label="Reply to #${id}">${esc(d.suggested_reply)}</textarea>
+        <div class="row"><button class="btn primary small" data-act="reply">Send reply</button></div></details>
+      <details><summary>Close-out email</summary><textarea class="close" aria-label="Close-out email for #${id}">${esc(d.suggested_close)}</textarea>
+        <div class="row"><button class="btn primary small" data-act="close">Send and close</button></div></details>`
+    : `<p class="muted">No draft yet. It comes with the next sync.</p>`}
+  </article>`;
+}
+function vTickets(){
+  const list = kind("ticket").sort((a,b) => (a.due_at ? new Date(a.due_at) : Infinity) - (b.due_at ? new Date(b.due_at) : Infinity));
+  if(!list.length) return `<p class="empty">No open tickets assigned to you.</p>`;
+  const order = ["reply","escalate","close","wait","none"], groups = Object.fromEntries(order.map(k => [k, []]));
+  for(const t of list){ const r = S.drafts.get(Number(t.meta.ticket))?.recommendation; (groups[r] || groups.none).push(t); }
+  const names = { ...REC, none:"Not drafted yet" };
+  return order.filter(k => groups[k].length).map(k => `<h2>${names[k]} (${groups[k].length})</h2>${groups[k].map(ticketCard).join("")}`).join("");
+}
+function li(when, what, sub, src, u){ return `<li class="u${u||1}"><span class="when">${when}</span><span class="what">${what}${sub ? `<span class="sub">${sub}</span>` : ""}</span><span class="src">${esc(src)}</span></li>`; }
+function vEyes(){
+  const items = kinds("brief-freshdesk","brief-slack","brief-asana");
+  const watching = kind("watching");
+  const bySec = {};
+  for(const i of items){ const k = i.meta.section_title || i.section; (bySec[k] = bySec[k] || []).push(i); }
+  const SRC = { freshdesk:"Freshdesk", slack:"Slack", asana:"Asana" };
+  let html = Object.entries(bySec).map(([title, list]) => `<h2>${esc(title)} (${list.length})</h2><ul class="list">${
+    list.sort((a,b) => b.urgency - a.urgency).map(i => li(i.at ? fmtDay(new Date(i.at)) : "", link(i.url, i.title), esc([i.why, i.who].filter(Boolean).join(" — ")), SRC[i.source] || i.source, i.urgency)).join("")}</ul>`).join("");
+  if(watching.length) html += `<h2>Tickets you're watching (${watching.length})</h2><ul class="list">${watching.map(t => li(fmtDay(new Date(t.at)), link(t.url, t.title), esc(`${STATUS[t.meta.status] || ""}, ${t.who}`), "Freshdesk")).join("")}</ul>`;
+  return html || `<p class="empty">Nothing needs your eyes right now.</p>`;
+}
+function vCalendar(){
+  const now = new Date(), start = new Date(now.getFullYear(), now.getMonth(), now.getDate()), end = new Date(start.getTime() + 15*864e5);
+  const rows = [
+    ...kind("calendar").map(i => ({ i, src:"Outlook" })),
+    ...kind("ticket").filter(i => i.due_at).map(i => ({ i, src:"Freshdesk due" })),
+  ].map(e => ({ ...e, d:itemDate(e.i) })).filter(e => e.d && e.d < end);
+  const over = rows.filter(e => e.src !== "Outlook" && e.d < now);
+  const days = new Map();
+  for(const e of rows.filter(e => e.d >= start && !(e.src !== "Outlook" && e.d < now)).sort((a,b) => a.d - b.d)){ const k = dayKey(e.d); if(!days.has(k)) days.set(k, []); days.get(k).push(e); }
+  const line = e => li(e.i.meta.all_day ? "All day" : fmtTime(e.d), link(e.i.url, e.i.title), esc(e.src === "Outlook" ? (e.i.meta.location || "") : (e.i.who || "")), e.src);
+  let html = over.length ? `<h2 style="color:var(--red)">Overdue (${over.length})</h2><ul class="list">${over.map(line).join("")}</ul>` : "";
+  for(const [k, list] of days) html += `<h2>${k === dayKey(now) ? "Today" : fmtDay(new Date(k + "T00:00:00"))}</h2><ul class="list">${list.map(line).join("")}</ul>`;
+  return html || `<p class="empty">Nothing on the calendar for two weeks.</p>`;
+}
+function vSpam(){
+  const list = kind("spam").sort((a,b) => new Date(b.at) - new Date(a.at));
+  if(!list.length) return `<p class="empty">Spam folder is empty.</p>`;
+  return `<ul class="list">${list.map(t => `<li data-id="${esc(t.meta.ticket)}"><span class="when">${fmtDay(new Date(t.at))}</span>
+    <span class="what">${link(t.url, t.title)}<span class="sub">${esc(t.meta.requester_email || t.who)}</span></span>
+    <button class="btn small" data-act="not_spam">Not spam</button></li>`).join("")}</ul>`;
+}
+const TABS = [
+  ["tickets", "My tickets", () => kind("ticket").length, vTickets],
+  ["eyes", "Eyes on", () => kinds("brief-freshdesk","brief-slack","brief-asana","watching").length, vEyes],
+  ["calendar", "Calendar", () => kind("calendar").filter(e => dayKey(itemDate(e)) === dayKey(new Date())).length, vCalendar],
+  ["spam", "Spam", () => kind("spam").length, vSpam],
+];
+function render(){
+  const now = new Date(), t = kind("ticket");
+  const over = t.filter(x => x.due_at && new Date(x.due_at) < now).length;
+  const today = t.filter(x => x.due_at && new Date(x.due_at) >= now && dayKey(new Date(x.due_at)) === dayKey(now)).length;
+  const meet = kind("calendar").filter(e => dayKey(itemDate(e)) === dayKey(now)).length;
+  const urgent = kinds("brief-freshdesk","brief-slack","brief-asana").filter(i => i.urgency >= 3).length;
+  let sync = "Not synced yet";
+  if(S.run){
+    const mins = Math.round((now - new Date(S.run.at)) / 60000);
+    const notes = (S.run.detail?.notes || []).filter(n => /^(Freshdesk|Slack|Asana|Outlook):/.test(n));
+    sync = `Synced ${mins < 1 ? "just now" : mins < 120 ? mins + " min ago" : fmtDay(new Date(S.run.at)) + " " + fmtTime(new Date(S.run.at))}` +
+      (notes.length ? `. <span class="err" title="${esc(notes.join("\n"))}">Couldn't read ${esc(notes.map(n => n.split(":")[0]).join(", "))}</span>` : "");
+  }
+  $("#app").innerHTML = `<div class="wrap">
+    <header class="top"><div>
+      <h1>${now.toLocaleDateString(undefined, { weekday:"long", month:"long", day:"numeric" })}</h1>
+      <p class="pulse"><b>${t.length}</b> open tickets${over ? `, <b class="red">${over} overdue</b>` : ""}, <b>${today}</b> due today, <b>${meet}</b> on the calendar${urgent ? `, <b class="red">${urgent} urgent</b> under Eyes on` : ""}</p>
+    </div><div class="sync"><span>${sync}</span><button class="btn small" id="signout">Sign out</button></div></header>
+    <nav class="tabs" role="tablist">${TABS.map(([id, label, n]) => `<button role="tab" data-tab="${id}" aria-selected="${S.tab === id}">${label}<span class="n">${n()}</span></button>`).join("")}</nav>
+    <main id="view">${TABS.find(x => x[0] === S.tab)[3]()}</main></div>`;
+  $("#signout").onclick = signOut;
+}
+document.addEventListener("click", e => {
+  const tab = e.target.closest("[data-tab]");
+  if(tab){ S.tab = tab.dataset.tab; render(); return; }
+  const b = e.target.closest("[data-act]"); if(!b) return;
+  const host = b.closest("[data-id]"), a = b.dataset.act;
+  const box = a === "reply" ? host.querySelector("textarea.reply") : a === "close" ? host.querySelector("textarea.close") : null;
+  act(a, host.dataset.id, box?.value || "", b);
+});
+
+async function boot(){
+  const { data:{ session } } = await sb.auth.getSession();
+  S.user = session?.user || null;
+  if(!S.user) return signinView();
+  if(new URLSearchParams(location.search).get("pw") === "1") return passwordView();
+  load();
+}
+sb.auth.onAuthStateChange(ev => { if(ev === "SIGNED_IN" && /access_token/.test(location.hash)) { history.replaceState(null, "", location.pathname + location.search); boot(); } });
+setInterval(() => { if(S.user && document.visibilityState === "visible" && !document.querySelector("details[open]")) load(); }, 5*60*1000);
+boot();
+</script>
+</body>
+</html>
