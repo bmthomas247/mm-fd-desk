@@ -4,7 +4,7 @@
 
 create table if not exists fd_items (
   uid        text primary key,            -- "<kind>:<source id>"
-  kind       text not null,               -- ticket | watching | spam | calendar | brief-freshdesk | brief-slack | brief-asana
+  kind       text not null,               -- ticket | sent | watching | spam | calendar | brief-freshdesk | brief-slack | brief-asana
   source     text not null,               -- freshdesk | slack | asana | outlook
   section    text,
   title      text not null,
@@ -31,6 +31,7 @@ create table if not exists fd_drafts (
   model             text,
   made_at           timestamptz not null default now()
 );
+alter table fd_drafts add column if not exists summary text;   -- two-sentence summary of the ticket
 
 create table if not exists fd_actions (     -- append-only record of everything sent from the site
   id bigserial primary key, at timestamptz not null default now(),
